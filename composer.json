@@ -1,5 +1,5 @@
 {
-    "name": "hcodebr/ecommerce",
+    "name": "welli-willers/ecommerce",
     "authors": [
         {
             "name": "Wellington Willers",
@@ -13,7 +13,7 @@
     },
     "autoload": {
         "psr-4": {
-            "": "vendor\\hcodebr\\php-classes\\src"
+            "Hcode\\": "vendor\\hcodebr\\php-classes\\src"
         }
     }
 }
