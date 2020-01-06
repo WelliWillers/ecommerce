@@ -43,7 +43,7 @@
             if( 
             !isset($_SESSION[User::SESSION]) 
             || 
-            !$_SESSION[User::SESSION] 
+            !$_SESSION[User::SESSION]
             || 
             !(int)$_SESSION[User::SESSION]["iduser"] > 0 
             || 
@@ -63,6 +63,12 @@
 
         }
 
-    }
+        public static function listAll(){
 
- ?>
+            $sql = new Sql();
+
+            return $sql->select("SELECT * FROM tb_users a INNER JOIN tb_person b USING(idperson) ORDER BY b.desperson");
+
+        }
+
+    }

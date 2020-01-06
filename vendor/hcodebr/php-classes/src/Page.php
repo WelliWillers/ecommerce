@@ -10,7 +10,7 @@ class Page {
     private $defaults = [
         "header"=>true,
         "footer"=>true,
-        "data"=>[] 
+        "data"=>[]
     ];
     private $options = [];
 
@@ -60,5 +60,3 @@ class Page {
     }
 
 }
-
-?>
