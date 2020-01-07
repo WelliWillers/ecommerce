@@ -15,9 +15,9 @@
         public function __construct($toAddress, $toName, $subject, $tplName, $data = array())
         {
             $config = array( 
-                "tpl_dir"       => $_SERVER["DOCUMENT_ROOT"] . "/views/email",
-                "cache_dir"     => $_SERVER["DOCUMENT_ROOT"] . "/views/cache/",
-                "debug"         => false 
+                "tpl_dir"       => $_SERVER["DOCUMENT_ROOT"]."/views/email/",
+			    "cache_dir"     => $_SERVER["DOCUMENT_ROOT"]."/views-cache/",
+                "debug"         => true 
             );
             Tpl::configure( $config );
     
@@ -33,6 +33,15 @@
 
             //Tell PHPMailer to use SMTP
             $this->mail->isSMTP();
+            
+            $this->mail->SMTPOptions = array(
+                'ssl' => array(
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                )
+             );
+
 
             //Enable SMTP debugging
             // SMTP::DEBUG_OFF = off (for production use)
