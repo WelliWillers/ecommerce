@@ -175,7 +175,7 @@ class User extends Model
 
                 $code = base64_encode($code);
 
-                $link = "http://www.ecommercer.com.br/admin/forgot/reset?code=$code";
+                $link = "http://www.ecommerce.com.br/admin/forgot/reset?code=$code";
 
                 $mailer = new Mailer($data["desemail"], $data["desperson"], "Redefenir a senha", "forgot", array(
                     "name" => $data["desperson"],
@@ -184,9 +184,7 @@ class User extends Model
 
                 $mailer->send();
 
-                var_dump($mailer);
-
-                return $link;
+                return $data;
             }
         }
     }
@@ -244,11 +242,12 @@ class User extends Model
         $sql = new Sql();
 
         $sql->query("UPDATE tb_users SET despassword = :password WHERE iduser = :iduser", array(
-            "password"=>$password,
-            "iduser"=>$this->getiduser()
+            ":password"=>$password,
+            ":iduser"=>$this->getiduser()
         ));
         
     }
+
 
 
 }
