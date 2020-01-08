@@ -229,6 +229,8 @@ $app->post("/admin/forgot/reset", function () {
 
 });
 
+Bracket Pair Colorizer 2
+
 $app->run();
 
  ?>
