@@ -76,4 +76,26 @@ $app->get('/admin/products/:idproduct', function($idproduct){
 
 });
 
+$app->post('/admin/products/:idproduct', function($idproduct){
+
+	User::verifyLogin();
+
+	$products = new Product();
+
+	$products->get((int)$idproduct);
+
+	$products->setData($_POST);
+
+	$products->save();
+
+	// var_dump($_FILES);
+	// exit;
+
+	$products->setPhoto($_FILES["file"]);
+
+	header("Location: /admin/products");
+	exit;
+
+});
+
 ?>
