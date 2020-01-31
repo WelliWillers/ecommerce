@@ -104,4 +104,113 @@ class Cart extends Model {
 
   }
 
+  public function addProduct(Product $product){
+    
+    $sql = new Sql();
+
+    $sql->query("INSERT INTO tb_cartsproducts (idcart, idproduct) VALUES (:idcart, :idproduct)", [
+      ":idcart"=>$this->getidcart(),
+      ":idproduct"=>$product->getidproduct()
+    ]);
+
+  }
+
+  public function removeProduct(Product $product, $all = false){
+    
+    $sql = new Sql();
+
+    if($all){
+
+      $sql->query("UPDATE tb_cartsproducts SET dtremoved = NOW() WHERE idcart = :idcart AND idproduct = :idproduct AND dtremoved IS NULL", [
+        ":idcart"=>$this->getidcart(),
+        ":idproduct"=>$product->getidproduct()
+      ]);
+
+    } else {
+
+      $sql->query("UPDATE tb_cartsproducts SET dtremoved = NOW() WHERE idcart = :idcart AND idproduct = :idproduct AND dtremoved IS NULL LIMIT 1", [
+        ":idcart"=>$this->getidcart(),
+        ":idproduct"=>$product->getidproduct()
+      ]);
+
+    }
+
+  }
+
+  public function getProducts(){
+
+    $sql = new Sql();
+
+    $rows = $sql->select("SELECT b.idproduct, b.desproduct, b.vlprice, b.vlwidth, b.vlheight, b.vllength, b.vlweight, b.desurl, COUNT(*) AS nrqtd, SUM(b.vlprice) AS vltotal
+    FROM tb_cartsproducts a
+    INNER JOIN tb_products b ON a.idproduct = b.idproduct
+    WHERE a.idcart = :idcart AND a.dtremoved IS NULL
+    GROUP BY b.idproduct, b.desproduct, b.vlprice, b.vlwidth, b.vlheight, b.vllength, b.vlweight, b.desurl
+    ORDER BY b.desproduct
+    ", [
+      ":idcart"=>$this->getidcart()
+    ]);
+
+    return Product::checkList($rows);
+    
+  }
+
+  public function getProductsTotals(){
+
+    $sql = new Sql();
+
+    $results = $sql->select("SELECT SUM(vlprice) AS vlprice, SUM(vlwidth) AS vlwidth, SUM(vlheight) AS vlheight, SUM(vllength) AS vllength, COUNT(*) AS nrqtd
+    FROM tb_product a
+    INNER JOIN tb_catrsproducts b ON a.idproduct = b.idproduct
+    WHERE b.idcart = :idcart AND dtremove IS NULL
+    ", [
+      ":idcart"=>$this->getidcart()
+    ]);
+
+    if(count($results) > 0) {
+
+      return $results[0];
+
+    } else {
+
+      return [0];
+
+    }
+
+  }
+
+  public function setFreight($nrzipcode){
+
+    $nrzipcode = str_replace("-", "", $nrzipcode); 
+
+    $totals = $this->getProductsTotals();
+
+    if ($totals['nrqtd'] > 0) {
+
+      $qs = http_build_query([
+        "nCdEmpresa"=>"",
+        "sDsSenha"=>"",
+        "nCdServico"=>"40010",
+        "sCepOrigem"=>"09853120",
+        "sCepDestino"=>$nrzipcode,
+        "nVlPeso"=>$totals['vlweight'],
+        "nCdFormato"=>"1",
+        "nVlComprimento"=>$totals['vllength'],
+        "nVlAltura"=>$totals['vlheight'],
+        "nVlLargura"=>$totals['vlwidth'],
+        "nVlDiametro"=>"0",
+        "sCdMaoPropria"=>"S",
+        "nVlValorDeclarado"=>$totals['vlprice'],
+        "sCdAvisoRecebimento"=>"S"
+      ]);
+
+      $xml = simplexml_load_file("http://ws.correios.com.br/calculador/CalcPrecoPrazo.aspx/CalcPrecoPrazo?".$qs);
+
+      var_dump($xml);
+      exit;
+
+    }
+
+  }
+
 }
