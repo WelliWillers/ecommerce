@@ -7,11 +7,11 @@
 	include "library/Rain/Tpl.php";
 	
 	// config
-	$config = array( 
-		"tpl_dir"       => "templates/simple/",
-		"cache_dir"     => "cache/",
-		"debug"         => true // set to false to improve the speed
-	);
+	$config = array(
+					"tpl_dir"       => "templates/simple/",
+					"cache_dir"     => "cache/",
+					"debug"         => true // set to false to improve the speed
+				   );
 
 	Tpl::configure( $config );
 

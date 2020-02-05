@@ -1,160 +1,217 @@
-<?php
+<?php 
 
 namespace Hcode\Model;
 
 use \Hcode\DB\Sql;
 use \Hcode\Model;
+use \Hcode\Mailer;
 
-class Category extends Model
-{
-  public static function listAll()
-  {
+class Category extends Model {
 
-    $sql = new Sql();
+	public static function listAll()
+	{
 
-    return $sql->select("SELECT * FROM tb_categories ORDER BY descategory");
-  }
+		$sql = new Sql();
 
-  public function save()
-  {
+		return $sql->select("SELECT * FROM tb_categories ORDER BY descategory");
 
-    $sql = new Sql();
+	}
 
-    $results = $sql->select("CALL sp_categories_save(:idcategory, :descategory)",
-      array(
-        ":idcategory" => $this->getidcategory(),
-        ":descategory" => $this->getdescategory()
-      )
-    );
+	public function save()
+	{
 
-    $this->setData($results[0]);
+		$sql = new Sql();
 
-    Category::updateFile();
+		$results = $sql->select("CALL sp_categories_save(:idcategory, :descategory)", array(
+			":idcategory"=>$this->getidcategory(),
+			":descategory"=>$this->getdescategory()
+		));
 
-  }
-  
-  public function get($idcategory)
-    {
+		$this->setData($results[0]);
 
-        $sql = new Sql();
+		Category::updateFile();
 
-        $results = $sql->select("SELECT * FROM tb_categories WHERE idcategory = :idcategory", array(
-            ":idcategory" => $idcategory
-        ));
+	}
 
-        $this->setData($results[0]);
-    }
+	public function get($idcategory)
+	{
 
+		$sql = new Sql();
 
-  public function delete()
-  {
-      $sql = new Sql();
+		$results = $sql->select("SELECT * FROM tb_categories WHERE idcategory = :idcategory", [
+			':idcategory'=>$idcategory
+		]);
 
-      $sql->query(
-          "DELETE FROM tb_categories WHERE idcategory = :idcategory",
-          array(
-              ":idcategory" => $this->getidcategory()
-          )
-      );
+		$this->setData($results[0]);
 
-      Category::updateFile();
+	}
 
-  }
+	public function delete()
+	{
 
-  public static function updateFile()
-  {
+		$sql = new Sql();
 
-    $categories = Category::listAll();
+		$sql->query("DELETE FROM tb_categories WHERE idcategory = :idcategory", [
+			':idcategory'=>$this->getidcategory()
+		]);
 
-    $html = array();
+		Category::updateFile();
 
-    foreach($categories as $row){
-      
-      array_push($html, "<li><a href='/categories/".$row['idcategory']."'>".$row['descategory']."</a></li>");
+	}
 
-    }
+	public static function updateFile()
+	{
 
-    file_put_contents($_SERVER["DOCUMENT_ROOT"] . DIRECTORY_SEPARATOR . "views" . DIRECTORY_SEPARATOR . "categories-menu.html", implode('', $html));
+		$categories = Category::listAll();
 
-  }
+		$html = [];
 
-  public function getProducts($related = true)
-  {
+		foreach ($categories as $row) {
+			array_push($html, '<li><a href="/categories/'.$row['idcategory'].'">'.$row['descategory'].'</a></li>');
+		}
 
-    $sql = new Sql();
+		file_put_contents($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . "views" . DIRECTORY_SEPARATOR . "categories-menu.html", implode('', $html));
 
-    if ($related === true) {
+	}
 
-      return $sql->select("SELECT * FROM tb_products WHERE idproduct IN(
-          SELECT a.idproduct
-          FROM tb_products a
-          INNER JOIN tb_productscategories b ON a.idproduct = b.idproduct
-          WHERE b.idcategory = :idcategory
-          )
-        ", [
-        ":idcategory" => $this->getidcategory()
-      ]);
-    } else {
+	public function getProducts($related = true)
+	{
 
-      return $sql->select("SELECT * FROM tb_products WHERE idproduct NOT IN(
-        SELECT a.idproduct
-          FROM tb_products a
-        INNER JOIN tb_productscategories b ON a.idproduct = b.idproduct
-        WHERE b.idcategory = :idcategory
-        )
-      ", [
-        ":idcategory" => $this->getidcategory()
-      ]);
+		$sql = new Sql();
 
-    }
+		if ($related === true) {
 
-  }
+			return $sql->select("
+				SELECT * FROM tb_products WHERE idproduct IN(
+					SELECT a.idproduct
+					FROM tb_products a
+					INNER JOIN tb_productscategories b ON a.idproduct = b.idproduct
+					WHERE b.idcategory = :idcategory
+				);
+			", [
+				':idcategory'=>$this->getidcategory()
+			]);
 
-  public function getProductsPage($page = 1, $itemsPerPage = 8)
-  {
+		} else {
 
-    $start = ($page - 1) * $itemsPerPage;
+			return $sql->select("
+				SELECT * FROM tb_products WHERE idproduct NOT IN(
+					SELECT a.idproduct
+					FROM tb_products a
+					INNER JOIN tb_productscategories b ON a.idproduct = b.idproduct
+					WHERE b.idcategory = :idcategory
+				);
+			", [
+				':idcategory'=>$this->getidcategory()
+			]);
 
-    $sql = new Sql();
+		}
 
-    $results = $sql->select("SELECT SQL_CALC_FOUND_ROWS * FROM tb_products a INNER JOIN tb_productscategories b ON b.idproduct = a.idproduct INNER JOIN tb_categories c ON c.idcategory = b.idcategory WHERE c.idcategory = :idcategory LIMIT $start, $itemsPerPage", [
-      "idcategory"=>$this->getidcategory()
-    ]);
+	}
 
-    $retultTotal = $sql->select("SELECT FOUND_ROWS() AS nrtotal;");
+	public function getProductsPage($page = 1, $itemsPerPage = 8)
+	{
 
-    return [
-      "data" => Product::checkList($results),
-      "total" => (int)$retultTotal[0]["nrtotal"],
-      "pages" => ceil($retultTotal[0]["nrtotal"] / $itemsPerPage)
-    ];
+		$start = ($page - 1) * $itemsPerPage;
 
-  }
+		$sql = new Sql();
 
+		$results = $sql->select("
+			SELECT SQL_CALC_FOUND_ROWS *
+			FROM tb_products a
+			INNER JOIN tb_productscategories b ON a.idproduct = b.idproduct
+			INNER JOIN tb_categories c ON c.idcategory = b.idcategory
+			WHERE c.idcategory = :idcategory
+			LIMIT $start, $itemsPerPage;
+		", [
+			':idcategory'=>$this->getidcategory()
+		]);
 
+		$resultTotal = $sql->select("SELECT FOUND_ROWS() AS nrtotal;");
 
-  public function addProduct(Product $product)
-  {
+		return [
+			'data'=>Product::checkList($results),
+			'total'=>(int)$resultTotal[0]["nrtotal"],
+			'pages'=>ceil($resultTotal[0]["nrtotal"] / $itemsPerPage)
+		];
 
-    $sql = new Sql();
+	}
 
-    $sql->query("INSERT INTO tb_productscategories (idcategory, idproduct) VALUE(:idcategory, :idproduct)", [
-      ":idcategory"=>$this->getidcategory(),
-      ":idproduct"=>$product->getidproduct()
-    ]);
+	public function addProduct(Product $product)
+	{
 
-  }
+		$sql = new Sql();
 
-  public function removeProduct(Product $product)
-  {
+		$sql->query("INSERT INTO tb_productscategories (idcategory, idproduct) VALUES(:idcategory, :idproduct)", [
+			':idcategory'=>$this->getidcategory(),
+			':idproduct'=>$product->getidproduct()
+		]);
 
-    $sql = new Sql();
+	}
 
-    $sql->query("DELETE FROM tb_productscategories WHERE idcategory = :idcategory AND idproduct = :idproduct", [
-      ":idcategory"=>$this->getidcategory(),
-      ":idproduct"=>$product->getidproduct()
-    ]);
+	public function removeProduct(Product $product)
+	{
 
-  }
+		$sql = new Sql();
+
+		$sql->query("DELETE FROM tb_productscategories WHERE idcategory = :idcategory AND idproduct = :idproduct", [
+			':idcategory'=>$this->getidcategory(),
+			':idproduct'=>$product->getidproduct()
+		]);
+
+	}
+			
+	public static function getPage($page = 1, $itemsPerPage = 10)
+	{
+
+		$start = ($page - 1) * $itemsPerPage;
+
+		$sql = new Sql();
+
+		$results = $sql->select("
+			SELECT SQL_CALC_FOUND_ROWS *
+			FROM tb_categories 
+			ORDER BY descategory
+			LIMIT $start, $itemsPerPage;
+		");
+
+		$resultTotal = $sql->select("SELECT FOUND_ROWS() AS nrtotal;");
+
+		return [
+			'data'=>$results,
+			'total'=>(int)$resultTotal[0]["nrtotal"],
+			'pages'=>ceil($resultTotal[0]["nrtotal"] / $itemsPerPage)
+		];
+
+	}
+
+	public static function getPageSearch($search, $page = 1, $itemsPerPage = 10)
+	{
+
+		$start = ($page - 1) * $itemsPerPage;
+
+		$sql = new Sql();
+
+		$results = $sql->select("
+			SELECT SQL_CALC_FOUND_ROWS *
+			FROM tb_categories 
+			WHERE descategory LIKE :search
+			ORDER BY descategory
+			LIMIT $start, $itemsPerPage;
+		", [
+			':search'=>'%'.$search.'%'
+		]);
+
+		$resultTotal = $sql->select("SELECT FOUND_ROWS() AS nrtotal;");
+
+		return [
+			'data'=>$results,
+			'total'=>(int)$resultTotal[0]["nrtotal"],
+			'pages'=>ceil($resultTotal[0]["nrtotal"] / $itemsPerPage)
+		];
+
+	}
 
 }
+
+ ?>
